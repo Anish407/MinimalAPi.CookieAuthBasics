@@ -29,7 +29,7 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-// similar to what app.useAuthentication() works
+// similar to how app.useAuthentication() works
 app.Use(async (context, next) =>
 {
     var idp = context.RequestServices.GetRequiredService<IDataProtectionProvider>();

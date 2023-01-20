@@ -1,5 +1,6 @@
 using LearnAuthenticationSchemas.Api.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Serialization;
 
@@ -9,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 // if i have a scheme that configures OAuth then when I use a challenge and specify the scheme name
 //.. it will use the configured scheme to challenge the user. determines which authentication scheme should be used to authenticate.
 // Add services to the container.
-builder.Services.AddAuthentication("local")
+builder.Services.AddAuthentication()
     //.AddScheme<CookieAuthenticationOptions, CookieAuthHandler>("local", o => { })
     .AddCookie("local", op =>
     {
@@ -25,13 +26,31 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("onlyCustomer", p =>
     {
         // AddAuthenticationSchemes("local", "Customer") will include both the cookie claims in the claims principal
-        p.AddAuthenticationSchemes("local", "Customer").RequireClaim("role", "Customer");
+        p.AddAuthenticationSchemes("local", "Customer").RequireClaim("role", "customer");
     });
 
     options.AddPolicy("onlylocal", p =>
     {
         p.AddAuthenticationSchemes("local", "Customer").RequireClaim("role", "local");
     });
+
+    var defaultAuthorizationPolicyBuilder = new AuthorizationPolicyBuilder(
+        "local",
+        "Customer"
+        );
+    defaultAuthorizationPolicyBuilder =
+        defaultAuthorizationPolicyBuilder.RequireAuthenticatedUser();
+    options.DefaultPolicy = defaultAuthorizationPolicyBuilder.Build();
+   
+    var onlySecondJwtSchemePolicyBuilder = new AuthorizationPolicyBuilder("SecondJwtScheme");
+    options.AddPolicy("OnlyCustomerCookie", onlySecondJwtSchemePolicyBuilder
+        .RequireAuthenticatedUser()
+        .Build());
+
+    var onlyCookieSchemePolicyBuilder = new AuthorizationPolicyBuilder(CookieAuthenticationDefaults.AuthenticationScheme);
+    options.AddPolicy("OnlyLocalCookie", onlyCookieSchemePolicyBuilder
+        .RequireAuthenticatedUser()
+        .Build());
 });
 
 builder.Services.AddControllers()
