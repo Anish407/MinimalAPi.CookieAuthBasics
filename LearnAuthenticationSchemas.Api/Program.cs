@@ -22,19 +22,15 @@ builder.Services.AddAuthentication("local")
 
 builder.Services.AddAuthorization(options =>
 {
-    //options.AddPolicy("customer", p =>
-    //{
-    //    p.AddAuthenticationSchemes("local", "Customer").RequireAuthenticatedUser();
-    //});
-
     options.AddPolicy("onlyCustomer", p =>
     {
-        p.RequireClaim("role", "Customer");
+        // AddAuthenticationSchemes("local", "Customer") will include both the cookie claims in the claims principal
+        p.AddAuthenticationSchemes("local", "Customer").RequireClaim("role", "Customer");
     });
 
     options.AddPolicy("onlylocal", p =>
     {
-        p.RequireClaim("role", "local");
+        p.AddAuthenticationSchemes("local", "Customer").RequireClaim("role", "local");
     });
 });
 
